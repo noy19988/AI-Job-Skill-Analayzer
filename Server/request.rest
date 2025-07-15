@@ -1,0 +1,29 @@
+### Register new user
+POST http://localhost:5000/api/users/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "Test1234!"
+}
+
+###
+
+### Login user
+POST http://localhost:5000/api/users/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "Test1234!"
+}
+
+###
+### Logout user
+POST http://localhost:5000/api/users/logout
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODc2YWZhYzM3MDgyOWMyNzA2NWRkNDYiLCJyYW5kb20iOiIwLjQxMDUxMDY4NTY2NDE1MDYiLCJpYXQiOjE3NTI2MDk1MDMsImV4cCI6MTc1MjYxMzEwM30.Hyvlu0FZMzhNPg-dhNwCM2wfhhyxEB9WGPwXzvw9u60
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODc2YWZhYzM3MDgyOWMyNzA2NWRkNDYiLCJyYW5kb20iOiIwLjQxMDUxMDY4NTY2NDE1MDYiLCJpYXQiOjE3NTI2MDk1MDMsImV4cCI6MTc1MzIxNDMwM30.2STnJcIoOnMct8g4pTprTEihrYHLu1dyLtX6PA-GOio"
+}

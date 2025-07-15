@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
-
+import userRoutes from "./routes/user_routes"; 
 const db = mongoose.connection;
 db.on("error", (error) => console.error(error));
 db.once("open", () => console.log("Connected to Database"));
@@ -12,6 +12,7 @@ db.once("open", () => console.log("Connected to Database"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use("/api/users", userRoutes);
 
 app.get("/about", (req, res) => {
   res.send("Hello World!");
