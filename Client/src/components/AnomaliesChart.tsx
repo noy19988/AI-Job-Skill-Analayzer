@@ -172,17 +172,27 @@ const AnomaliesChart: React.FC<AnomaliesChartProps> = ({ token }) => {
           <div className="text-sm text-gray-600">Critical Issues</div>
         </div>
         <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">
-            {data.totalClients - data.anomalies.reduce((sum, a) => sum + (a.count > 0 ? 1 : 0), 0)}
-          </div>
-          <div className="text-sm text-gray-600">Healthy Clients</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-600">
-            {data.totalClients > 0 ? (((data.totalClients - data.anomalies.reduce((sum, a) => sum + (a.count > 0 ? 1 : 0), 0)) / data.totalClients) * 100).toFixed(1) : 0}%
-          </div>
-          <div className="text-sm text-gray-600">Health Rate</div>
-        </div>
+  <div className="text-2xl font-bold text-orange-500">
+    {
+      data.anomalies
+        .filter(a => a.severity === 'medium')
+        .reduce((sum, a) => sum + a.count, 0)
+    }
+  </div>
+  <div className="text-sm text-gray-600">Medium Issues</div>
+</div>
+
+<div className="bg-white p-4 rounded-lg border border-gray-200">
+  <div className="text-2xl font-bold text-yellow-500">
+    {
+      data.anomalies
+        .filter(a => a.severity === 'low')
+        .reduce((sum, a) => sum + a.count, 0)
+    }
+  </div>
+  <div className="text-sm text-gray-600">Low Issues</div>
+</div>
+
       </div>
     </div>
   );

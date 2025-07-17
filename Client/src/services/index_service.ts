@@ -88,7 +88,20 @@ export interface DashboardMetrics {
   
   export interface AnomaliesStatsResponse {
     totalClients: number;
+    healthyClients: number;
     anomalies: AnomalyStats[];
+  }
+
+  export interface CriticalAnomaliesClient {
+    clientName: string;
+    criticalAnomaliesCount: number;
+    totalLogs: number;
+    criticalAnomaliesPercentage: number;
+  }
+  
+  export interface CriticalAnomaliesStatsResponse {
+    totalClients: number;
+    clientsWithCriticalAnomalies: CriticalAnomaliesClient[];
   }
 
 export const getIndexLogs = async (filters: IndexLogsFilters, token: string): Promise<IndexLogsResponse> => {
@@ -192,6 +205,23 @@ export const getDashboardMetrics = async (token: string): Promise<DashboardMetri
       return response.data;
     } catch (error) {
       console.error("Anomalies stats fetch error:", error);
+      throw error;
+    }
+  };
+
+
+
+export const getCriticalAnomaliesStats = async (token: string): Promise<CriticalAnomaliesStatsResponse> => {
+    try {
+      const response = await axios.get(`${API_URL}/critical-anomalies-stats`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Critical anomalies stats fetch error:", error);
       throw error;
     }
   };
