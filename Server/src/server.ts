@@ -5,14 +5,30 @@ dotenv.config();
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import userRoutes from "./routes/user_routes"; 
+import aiRoutes from "./routes/ai_routes"; 
+import indexLogsRoutes from "./routes/indexlogs_routes";
+
+
+import cors from 'cors';
+
 const db = mongoose.connection;
 db.on("error", (error) => console.error(error));
 db.once("open", () => console.log("Connected to Database"));
+
+app.use(cors({
+    origin: 'http://localhost:5173', 
+    credentials: true
+  }));
+
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/api/users", userRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/indexlogs", indexLogsRoutes);
+
+
 
 app.get("/about", (req, res) => {
   res.send("Hello World!");

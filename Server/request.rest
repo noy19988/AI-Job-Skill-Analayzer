@@ -27,3 +27,14 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODc2YWZhY
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODc2YWZhYzM3MDgyOWMyNzA2NWRkNDYiLCJyYW5kb20iOiIwLjQxMDUxMDY4NTY2NDE1MDYiLCJpYXQiOjE3NTI2MDk1MDMsImV4cCI6MTc1MzIxNDMwM30.2STnJcIoOnMct8g4pTprTEihrYHLu1dyLtX6PA-GOio"
 }
+
+
+
+### 🤖 AI Chat - Ask question to Gemini and query MongoDB
+POST http://localhost:5000/api/ai/chat
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODc2YWZhYzM3MDgyOWMyNzA2NWRkNDYiLCJyYW5kb20iOiIwLjQxMzA4NDE1MjE5NzgwNDI2IiwiaWF0IjoxNzUyNjYwOTU0LCJleHAiOjE3NTI2NjQ1NTR9.kFo1Jgs2PwL92c2l7ZBrrnKU8NQbOQgCU_1_lFhsqwc
+
+{
+  "question": "Count the number of indexing logs in the IndexLog collection."
+}
