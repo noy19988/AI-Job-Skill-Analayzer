@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { login } from "../services/user_service";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -6,6 +8,7 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate(); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -13,16 +16,33 @@ const LoginPage = () => {
     setSuccess(false);
     setIsLoading(true);
 
-    setTimeout(() => {
-      try {
-        setSuccess(true);
-      } catch (err) {
-        console.error(err);
-        setError("Login failed, please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1500);
+    try {
+      const response = await login({ email, password });
+      
+      localStorage.setItem("accessToken", response.accessToken);
+      localStorage.setItem("refreshToken", response.refreshToken);
+      localStorage.setItem("userId", response._id);
+      localStorage.setItem("email", email); 
+      
+      setSuccess(true);
+      
+      setTimeout(() => {
+        navigate("/app/dashboard");
+      }, 1000);
+      
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "error" in err
+            ? (err as { error: string }).error
+            : "Login failed, please try again.";
+    
+      console.error("Login error:", err);
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,7 +59,7 @@ const LoginPage = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
-          <div className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email address
@@ -51,7 +71,7 @@ const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                   placeholder="Enter your email"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -73,7 +93,7 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                   placeholder="Enter your password"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -86,7 +106,7 @@ const LoginPage = () => {
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
-                <svg className="h-5 w-5 text-red-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="text-sm text-red-700">{error}</span>
@@ -95,17 +115,16 @@ const LoginPage = () => {
 
             {success && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center">
-                <svg className="h-5 w-5 text-green-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm text-green-700">Login successful!</span>
+                <span className="text-sm text-green-700">Login successful! Redirecting...</span>
               </div>
             )}
 
             <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isLoading}
+              type="submit"
+              disabled={isLoading || !email || !password}
               className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
@@ -120,22 +139,14 @@ const LoginPage = () => {
                 "Login"
               )}
             </button>
-          </div>
+          </form>
 
           <div className="mt-6 text-center">
             <a href="#" className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200">
+              Forgot your password?
             </a>
           </div>
         </div>
-
-        {/* <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
-            <a href="#" className="text-blue-600 hover:text-blue-500 font-medium transition-colors duration-200">
-              Register here
-            </a>
-          </p>
-        </div> */}
       </div>
     </div>
   );
