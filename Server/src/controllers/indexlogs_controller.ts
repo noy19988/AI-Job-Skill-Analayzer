@@ -170,57 +170,55 @@ export const getDashboardMetrics = async (req: Request, res: Response) => {
   export const getAnomaliesStats = async (req: Request, res: Response) => {
     try {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
+  
       const logs = await IndexLogModel.find({
         timestamp: { $gte: weekAgo },
         status: "completed"
       }).select({
         transactionSourceName: 1,
-        "progress.TOTAL_RECORDS_IN_FEED": 1,
-        "progress.TOTAL_JOBS_IN_FEED": 1,
-        "progress.TOTAL_JOBS_SENT_TO_INDEX": 1,
-        "progress.TOTAL_JOBS_SENT_TO_ENRICH": 1,
-        "progress.TOTAL_JOBS_DONT_HAVE_METADATA": 1,
-        "progress.TOTAL_JOBS_FAIL_INDEXED": 1,
+        progress: 1,
         recordCount: 1
       });
   
       const totalClients = logs.length;
+      const affectedClients = new Set<string>();
+  
       const anomalies = {
         indexOverflow: 0,
         metadataLogicError: 0,
         feedProcessingFailure: 0,
         indexingMathError: 0,
         zeroProcessingAnomaly: 0,
-        recordCountMismatch: 0
       };
   
       logs.forEach(log => {
         const progress = log.progress;
-        
+        const clientId = log.transactionSourceName;
+  
         if (progress.TOTAL_JOBS_SENT_TO_INDEX > progress.TOTAL_JOBS_IN_FEED) {
           anomalies.indexOverflow++;
+          affectedClients.add(clientId);
         }
-        
+  
         if (progress.TOTAL_JOBS_DONT_HAVE_METADATA > progress.TOTAL_JOBS_SENT_TO_ENRICH) {
           anomalies.metadataLogicError++;
+          affectedClients.add(clientId);
         }
-        
+  
         if (progress.TOTAL_JOBS_IN_FEED > progress.TOTAL_RECORDS_IN_FEED) {
           anomalies.feedProcessingFailure++;
+          affectedClients.add(clientId);
         }
-        
+  
         const totalProcessed = progress.TOTAL_JOBS_SENT_TO_INDEX + progress.TOTAL_JOBS_FAIL_INDEXED;
         if (totalProcessed > progress.TOTAL_JOBS_IN_FEED && progress.TOTAL_JOBS_IN_FEED > 0) {
           anomalies.indexingMathError++;
+          affectedClients.add(clientId);
         }
-        
+  
         if (progress.TOTAL_JOBS_IN_FEED === 0 && progress.TOTAL_RECORDS_IN_FEED > 0) {
           anomalies.zeroProcessingAnomaly++;
-        }
-        
-        if (log.recordCount > progress.TOTAL_JOBS_SENT_TO_INDEX * 1.5) {
-          anomalies.recordCountMismatch++;
+          affectedClients.add(clientId);
         }
       });
   
@@ -260,17 +258,11 @@ export const getDashboardMetrics = async (req: Request, res: Response) => {
           description: "Records exist but no jobs processed",
           severity: "high"
         },
-        {
-          name: "Record Count Mismatch",
-          percentage: totalClients > 0 ? (anomalies.recordCountMismatch / totalClients) * 100 : 0,
-          count: anomalies.recordCountMismatch,
-          description: "Record count significantly higher than indexed",
-          severity: "low"
-        }
-      ] as const;
+      ];
   
       res.status(200).json({
         totalClients,
+        healthyClients: totalClients - affectedClients.size,
         anomalies: stats
       });
     } catch (error) {
@@ -278,7 +270,7 @@ export const getDashboardMetrics = async (req: Request, res: Response) => {
       res.status(500).json({ message: "Server error" });
     }
   };
-
+  
 
   export const getClients = async (req: Request, res: Response) => {
     try {
@@ -301,3 +293,66 @@ export const getCountries = async (req: Request, res: Response) => {
   };
 
 
+  export const getCriticalAnomaliesStats = async (req: Request, res: Response) => {
+    try {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  
+      const logs = await IndexLogModel.find({
+        timestamp: { $gte: weekAgo },
+        status: "completed"
+      }).select({
+        transactionSourceName: 1,
+        progress: 1,
+      });
+  
+      const clientStats = new Map<string, { totalLogs: number; criticalAnomalies: number }>();
+  
+      logs.forEach(log => {
+        const clientName = log.transactionSourceName;
+        const progress = log.progress;
+        
+        if (!clientStats.has(clientName)) {
+          clientStats.set(clientName, { totalLogs: 0, criticalAnomalies: 0 });
+        }
+        
+        const stats = clientStats.get(clientName)!;
+        stats.totalLogs++;
+  
+        let hasCriticalAnomaly = false;
+        
+        if (progress.TOTAL_JOBS_SENT_TO_INDEX > progress.TOTAL_JOBS_IN_FEED) {
+          hasCriticalAnomaly = true;
+        }
+        
+        if (progress.TOTAL_JOBS_IN_FEED > progress.TOTAL_RECORDS_IN_FEED) {
+          hasCriticalAnomaly = true;
+        }
+        
+        if (progress.TOTAL_JOBS_IN_FEED === 0 && progress.TOTAL_RECORDS_IN_FEED > 0) {
+          hasCriticalAnomaly = true;
+        }
+  
+        if (hasCriticalAnomaly) {
+          stats.criticalAnomalies++;
+        }
+      });
+  
+      const clientsWithCriticalAnomalies = Array.from(clientStats.entries())
+        .map(([clientName, stats]) => ({
+          clientName,
+          criticalAnomaliesCount: stats.criticalAnomalies,
+          totalLogs: stats.totalLogs,
+          criticalAnomaliesPercentage: stats.totalLogs > 0 ? (stats.criticalAnomalies / stats.totalLogs) * 100 : 0
+        }))
+        .filter(client => client.criticalAnomaliesCount > 0) 
+        .sort((a, b) => b.criticalAnomaliesPercentage - a.criticalAnomaliesPercentage); 
+  
+      res.status(200).json({
+        totalClients: clientStats.size,
+        clientsWithCriticalAnomalies
+      });
+    } catch (error) {
+      console.error("Error fetching critical anomalies stats:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
